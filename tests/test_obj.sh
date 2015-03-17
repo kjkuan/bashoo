@@ -202,11 +202,11 @@ test_object_creation_message_passing_and_polymorphism() {
 test_two_objects_messaging_each_other() {
     obj_new A
     obj_new B
+    local a b
     ds_pop_to a b
     obj_msg $a method_a1 $b
     obj_msg $a method_a3
 
-    set -x
     [[ ${DS[-1]} = "A's attr2 is aaa2" ]]
     [[ ${DS[-2]} = "A's attr1 is aaa1a11" ]]
     [[ ${DS[-3]} = "B's attr1 is bbb" ]]

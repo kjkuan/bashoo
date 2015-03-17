@@ -8,7 +8,11 @@ declare -gA OBJ=()
 
 _obj_NEXT_ID=0    # the next numerical object ID to use by `obj_new`.
 _obj_FREED_IDs=() # IDs of objects freed by `obj_free`.
-
+# declare -gA _obj_ATTRIBUTES_*=()
+#
+# NOTE: _obj_ATTRIBUTES_* are dynamically created global associative arrays
+#       that are used to hold an object's attributes, and each is suffixed
+#       with obj_id and is created during obj_new().
 
 declare -gA _OBJ_TYPE_PARENT  # type -> parent type
 #
@@ -49,8 +53,8 @@ obj_inherit() {
 #
 obj_new() {
     local -r __type=$1; shift
-    local -r __self=$((_obj_NEXT_ID++)):$__type
-    local -r __attrs=_$$${RANDOM}${RANDOM}${RANDOM}${RANDOM} #FIXME: good enough?
+    local -r __self=$_obj_NEXT_ID:$__type
+    local -r __attrs=_obj_ATTRIBUTES_$(( _obj_NEXT_ID++ ))
     declare -gA "$__attrs=()"
     OBJ[$__self]=$__attrs
 
