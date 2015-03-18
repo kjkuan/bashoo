@@ -1,6 +1,8 @@
 Bashoo
 -------
 Bashoo brings Object-Oriented Programming to Bash.
+Single inhertiance and polymorphism are supported.
+
 It is being developed and tested with Bash 4.3.
 
 
