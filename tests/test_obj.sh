@@ -96,6 +96,8 @@ Square::resize() {
         return 1
     fi
 }
+Square::__unset__() { ds_push "I'm being freed!"; }
+
 
 Canvas() {
     obj_super
@@ -181,6 +183,9 @@ test_object_creation_message_passing_and_polymorphism() {
     obj_msg $square area
     [[ ${DS[-1]} = 100 ]]; ds_pop
 
+    obj_free $square
+    [[ ${DS[-1]} = "I'm being freed!" ]]; ds_pop
+
     obj_msg $rectangle color
     [[ ${DS[-1]} = black ]]; ds_pop
 
@@ -196,6 +201,9 @@ test_object_creation_message_passing_and_polymorphism() {
     obj_msg $rectangle draw canvas=$canvas
     obj_msg $canvas push_shapes
     [[ ${DS[-1]} = $rectangle ]]; ds_pop
+
+    obj_free $rectangle
+    obj_free $canvas
 }
 
 
@@ -212,6 +220,8 @@ test_two_objects_messaging_each_other() {
     [[ ${DS[-3]} = "B's attr1 is bbb" ]]
 
     ds_pop_n 3
+    obj_free $a
+    obj_free $b
 }
 
 

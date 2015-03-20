@@ -24,6 +24,7 @@ declare -gA _OBJ_TYPE_PARENT  # type -> parent type
 Object() { :; }
 Object::str() { ds_push $__self; }
 Object::echo() { obj_msg $__self str; ds_echo_pop; }
+Object::__unset__() { :; }
 
 
 # Usage: obj_inherit <type_name> <parent_type_name>
@@ -89,10 +90,14 @@ obj_super() {
 
 
 # Usage: obj_free <obj_id>
-# Description: Delete the object referenced by `obj_id`.
+# Description:
+#     Delete the object referenced by `obj_id`.
+#     Sends the __unset__ message to the object before unsetting it. This
+#     give the object a chance to clean up any external resources.
 #
 obj_free() {
     if [[ ${OBJ[$1]} ]]; then
+        obj_msg $1 __unset__
         unset ${OBJ[$1]}
         unset OBJ\["$1"\]
         _obj_FREED_IDs+=($1)
