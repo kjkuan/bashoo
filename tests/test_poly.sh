@@ -4,7 +4,11 @@ set -eEu
 
 source bashoo.sh
 
-Shape() {
+Shape() { obj_msg $__self move_to "$@"; }
+
+Shape::draw() { ds_push_err "Not implemented!"; return 1; }
+
+Shape::move_to() {
     local x y
     parse_args -su "x y" "$@"
 
@@ -12,12 +16,13 @@ Shape() {
     __[x]=$x; __[y]=$y
 }
 
-Shape::draw() { return 1; }
-Shape::move_to() { local -n __=$__attrs; __[x]=$1; __[y]=$2; }
 Shape::rel_move_to() {
+    local x y
+    parse_args -su "x y" "$@"
+
     local -n __=$__attrs
-    __[x]=$(( __[x] + $1 ))
-    __[y]=$(( __[y] + $2 ))
+    __[x]=$(( __[x] + $x ))
+    __[y]=$(( __[y] + $y ))
 }
 
 Rectangle() {
@@ -59,7 +64,7 @@ Circle::radius=() { local -n __=$__attrs; __[radius]=$1; }
 do_something_with_shape() {
     local shape=$1
     obj_msg $shape draw
-    obj_msg $shape rel_move_to 100 100
+    obj_msg $shape rel_move_to x=100 y=100
     obj_msg $shape draw
 }
 
@@ -71,6 +76,7 @@ main() {
 
     for shape in "${DS[@]:0}"; do
         do_something_with_shape "$shape"
+        obj_free $shape
     done
     ds_pop_n ${#DS[*]}
 
@@ -79,6 +85,8 @@ main() {
 
     obj_msg $rectangle width= 30
     obj_msg $rectangle draw
+
+    obj_free $rectangle
 }
 
 main
