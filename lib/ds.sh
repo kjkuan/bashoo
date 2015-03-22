@@ -11,7 +11,7 @@
 # To get the top item on the stack:    ${DS[-1]}
 # To pop the top item off the stack:   ds_pop
 #
-# To get the last $N item on the stack:     len=${#DS[@]}; ${DS[@]:len-N:N}
+# To get the last $N item on the stack:     ${DS[@]: -N}
 # To pop the last $N items off the stack:   ds_pop $N
 #
 DS=()

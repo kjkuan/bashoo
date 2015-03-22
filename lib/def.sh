@@ -5,7 +5,7 @@
 #    local var1 var2 var3 
 #
 #    local name
-#    def name <<-'EOF'
+#    def_to name <<-'EOF'
 #        ... function body goes here ... 
 #        ... we will be able to access $var1 $var2 ...
 #    EOF
@@ -59,6 +59,12 @@
 
 
 DEF_LOCALS=()
+
+def() {
+    local f=$(<"$2")
+    eval "$1()" "${f#*$'\n'}"
+}
+end_def() { declare -f ${1:-=}; }
 
 def_to() {
     local def_name=$1

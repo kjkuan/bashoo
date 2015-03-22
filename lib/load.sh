@@ -44,6 +44,16 @@ load() {
         path=$path/$mpath
         [[ ${SOURCE_LOADED[$path]:-""} ]] && return
 
+        #FIXME: added for the module system. Document this!
+        if [[ -d "$path" ]]; then
+            if [[ -e "$path/__mod.sh" ]]; then
+                path=$path/__mod.sh
+            else
+                echo : pass\;
+                return
+            fi
+        fi
+
         if [[ -e $path ]]; then
             path=$(q "$(readlink -f "$path")")
 
