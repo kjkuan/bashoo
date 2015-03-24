@@ -13,33 +13,33 @@ Shape() { # <x> <y> [color]
     local x y color
     parse_args -us "x y color?" "$@"
 
-    local -n __=$__attrs
-    __[x]=$x
-    __[y]=$y
-    __[color]=${color:-"black"}
+    local -n self=$__self
+    self[x]=$x
+    self[y]=$y
+    self[color]=${color:-"black"}
 }
-Shape::color() { local -n __=$__attrs; ds_push "${__[color]}"; }
-Shape::color=() { local -n __=$__attrs; __[color]=$1; }
-Shape::str() { local -n __=$__attrs; ds_push "$__type(${__[color]})"; }
+Shape::color() { local -n self=$__self; ds_push "${self[color]}"; }
+Shape::color=() { local -n self=$__self; self[color]=$1; }
+Shape::str() { local -n self=$__self; ds_push "$__type(${self[color]})"; }
 Shape::area() { return 1; }
 Shape::draw() { return 1; }
-Shape::position() { local -n __=$__attrs; ds_push "${__[x]},${__[y]}"; }
+Shape::position() { local -n self=$__self; ds_push "${self[x]},${self[y]}"; }
 
 
 Rectangle() { # <x> <y> <width> <height>
     local width height _args=(obj_super)
     parse_args -s "width height" "$@"
 
-    local -n __=$__attrs
-    __[width]=$width __[height]=$height
+    local -n self=$__self
+    self[width]=$width self[height]=$height
 
     "${_args[@]}"
 }
 obj_inherit Rectangle Shape
 
 Rectangle::area() {
-    local -n __=$__attrs
-    ds_push $(( __[width] * __[height] ))
+    local -n self=$__self
+    ds_push $(( self[width] * self[height] ))
 }
 Rectangle::resize() {
     local width height
@@ -50,23 +50,23 @@ Rectangle::resize() {
         return 1
     fi
 
-    local -n __=$__attrs
+    local -n self=$__self
 
     case $width in 
-        [+-]*) __[width]=$(( __[width] + width )) ;;
-            *) __[width]=$width ;;
+        [+-]*) self[width]=$(( self[width] + width )) ;;
+            *) self[width]=$width ;;
     esac
     case $height in 
-        [+-]*) __[height]=$(( __[height] + height )) ;;
-            *) __[height]=$height;;
+        [+-]*) self[height]=$(( self[height] + height )) ;;
+            *) self[height]=$height;;
     esac
 }
 Rectangle::draw() { # <canvas>
     local canvas=${1#*=}
-    obj_msg $canvas add_shape $__self
+    obj_msg $canvas add_shape $__id
 
-    local -n __=$__attrs
-    echo "Drawing $__type at (${__[x]}, ${__[y]}) on a canvas..."
+    local -n self=$__self
+    echo "Drawing $__type at (${self[x]}, ${self[y]}) on a canvas..."
 }
 
 
@@ -85,13 +85,13 @@ Square::resize() {
     width=${width:-$height}
     height=${height:-$width}
 
-    local -n __=$__attrs
+    local -n self=$__self
 
-    local old_width=${__[width]} old_height=${__[height]}
+    local old_width=${self[width]} old_height=${self[height]}
 
-    obj_msg -p $__self resize width=$width height=$height
-    if [[ ${__[width]} != ${__[height]} ]]; then
-        __[width]=$old_width; __[height]=$old_height
+    obj_msg -p $self resize width=$width height=$height
+    if [[ ${self[width]} != ${self[height]} ]]; then
+        self[width]=$old_width; self[height]=$old_height
         ds_push_err "A square must remain a square after resizing!"
         return 1
     fi
@@ -101,56 +101,61 @@ Square::__unset__() { ds_push "I'm being freed!"; }
 
 Canvas() {
     obj_super
-    local -n __=$__attrs
+    local -n self=$__self
 
     local array=array_$RANDOM
     declare -ga "$array=()"
-    __[shapes]=$array
+    self[shapes]=$array
 }
+Canvas::__unset__() {
+   local -n self=$__self 
+   unset ${self[shapes]}
+}
+
 Canvas::add_shape() { # <shape>
-    local -n __=$__attrs
-    local -n shapes=${__[shapes]}
+    local -n self=$__self
+    local -n shapes=${self[shapes]}
     shapes+=("$1")
 }
 Canvas::push_shapes() {
-    local -n __=$__attrs
-    local -n shapes=${__[shapes]}
+    local -n self=$__self
+    local -n shapes=${self[shapes]}
     ds_push "${shapes[@]}"
 }
 
 
 
 A() {
-    local -n __=$__attrs
-    __[attr1]=aaa
+    local -n self=$__self
+    self[attr1]=aaa
 }
 A::method_a1() {
-    local -n __=$__attrs
-    __[attr1]=aaa1
+    local -n self=$__self
+    self[attr1]=aaa1
 
     local b=$1
-    obj_msg $b method_b $__self
+    obj_msg $b method_b $__id
 
-    __[attr1]+=11
+    self[attr1]+=11
 }
 A::method_a2() {
-    local -n __=$__attrs
-    __[attr2]=aaa2
-    __[attr1]+=a
+    local -n self=$__self
+    self[attr2]=aaa2
+    self[attr1]+=a
 }
 A::method_a3() {
-    local -n __=$__attrs
-    ds_push "A's attr1 is ${__[attr1]}"
-    ds_push "A's attr2 is ${__[attr2]}"
+    local -n self=$__self
+    ds_push "A's attr1 is ${self[attr1]}"
+    ds_push "A's attr2 is ${self[attr2]}"
 }
 
 B() {
-    local -n __=$__attrs
-    __[attr1]=bbb
+    local -n self=$__self
+    self[attr1]=bbb
 }
 B::method_b() {
-    local -n __=$__attrs
-    ds_push "B's attr1 is ${__[attr1]}"
+    local -n self=$__self
+    ds_push "B's attr1 is ${self[attr1]}"
 
     local a=$1
     obj_msg $a method_a2

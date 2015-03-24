@@ -22,8 +22,8 @@ declare -gA _OBJ_TYPE_PARENT  # type -> parent type
 
 # Define the root object type.
 Object() { :; }
-Object::str() { ds_push $__self; }
-Object::echo() { obj_msg $__self str; ds_echo_pop; }
+Object::str() { ds_push $__id; }
+Object::echo() { obj_msg $__id str; ds_echo_pop; }
 Object::__unset__() { :; }
 
 
@@ -54,16 +54,21 @@ obj_inherit() {
 #
 obj_new() {
     local -r __type=$1; shift
-    local -r __self=$_obj_NEXT_ID:$__type
-    local -r __attrs=_obj_ATTRIBUTES_$(( _obj_NEXT_ID++ ))
-    declare -gA "$__attrs=()"
-    OBJ[$__self]=$__attrs
+    local -r __id=$_obj_NEXT_ID:$__type
+    local -r __self=_obj_ATTRIBUTES_$(( _obj_NEXT_ID++ ))
+    declare -gA "$__self=([0]=$__id)"
+    OBJ[$__id]=$__self
+
+    # NOTE: We set [0] of the $__self associative array to $__id so that in
+    #       a method in which the user has done: local -n self=$__self
+    #       he/she can use $self instead of $__id, thus, "obj_msg $self method"
+    #       reads nicer than "obj_msg $__id method".
 
     Object   # base constructor, currently does not thing.
 
     "$__type" "$@"
 
-    ds_push "$__self"
+    ds_push "$__id"
 }
 
 
@@ -76,7 +81,7 @@ obj_new() {
 #
 obj_super() {
     if [[ ! ${__super:-} ]]; then
-        local __super=${_OBJ_TYPE_PARENT[${__self#*:}]:-"Object"}
+        local __super=${_OBJ_TYPE_PARENT[${__id#*:}]:-"Object"}
     else
         local __super=${_OBJ_TYPE_PARENT[$__super]:-"Object"}
     fi
@@ -128,10 +133,10 @@ obj_msg() {
     if [[ $1 = -p ]]; then from_super=1; shift; fi
 
     if [[ ! ${OBJ[$1]} ]]; then
-        ds_push_err "Object '$__self' doesn't exist!"
+        ds_push_err "Object '$__id' doesn't exist!"
         return 1
     fi
-    local -r __self=$1 __type=${1#*:} msg_name=$2; shift 2
+    local -r __id=$1 __type=${1#*:} msg_name=$2; shift 2
 
     local cur_type=$__type
     if [[ ${from_super:-''} ]]; then
@@ -143,6 +148,6 @@ obj_msg() {
         [[ $cur_type = Object ]] && break
     done
 
-    local -r __attrs=${OBJ[$__self]}
+    local -r __self=${OBJ[$__id]}
     "$cur_type::$msg_name" "$@"
 }

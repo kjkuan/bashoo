@@ -22,10 +22,10 @@ source bashoo.sh
 # A type is defined by a constructor function like this.
 # The name of the function is the type.
 Shape() {
-    # Send the move_to message to the $__self object with two named arguments.
-    obj_msg $__self move_to x=$1 y=$2
+    # Send the move_to message to the $__id object with two named arguments.
+    obj_msg $__id move_to x=$1 y=$2
 
-    # NOTE: __self is a special variable that identifies the object itself.
+    # NOTE: __id is a special variable that identifies the object itself.
     #       It's avaialbe within any constructors or methods so that an object
     #       can send messages to itself.
 }
@@ -38,11 +38,11 @@ Shape::move_to() {
     local x y
     parse_args -s "x y" "$@"
 
-    local -n __=$__attrs
-    # __ is now our associative array holding the object attributes.
+    local -n self=$__self
+    # self is now our associative array holding the object attributes.
     # We can set object attributes by assigning [key]=value to it.
 
-    __[x]=$1; __[y]=$2
+    self[x]=$1; self[y]=$2
 }
 
 # An abstract method, needs to be implemented by a subtype.
@@ -65,8 +65,8 @@ Circle() {
 obj_inherit Circle Shape  # make Circle a subtype of Shape.
 
 Circle::draw() {
-    local -n __=$__attrs
-    echo "Drawing a $__type at (${__[x]}, ${__[y]})..."
+    local -n self=$__self
+    echo "Drawing a $__type at (${self[x]}, ${self[y]})..."
 
     # NOTE: $__type expands to the object's type
 }

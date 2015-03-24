@@ -4,7 +4,7 @@ set -eEu
 
 source bashoo.sh
 
-Shape() { obj_msg $__self move_to "$@"; }
+Shape() { obj_msg $__id move_to "$@"; }
 
 Shape::draw() { ds_push_err "Not implemented!"; return 1; }
 
@@ -12,54 +12,54 @@ Shape::move_to() {
     local x y
     parse_args -su "x y" "$@"
 
-    local -n __=$__attrs
-    __[x]=$x; __[y]=$y
+    local -n self=$__self
+    self[x]=$x; self[y]=$y
 }
 
 Shape::rel_move_to() {
     local x y
     parse_args -su "x y" "$@"
 
-    local -n __=$__attrs
-    __[x]=$(( __[x] + $x ))
-    __[y]=$(( __[y] + $y ))
+    local -n self=$__self
+    self[x]=$(( self[x] + $x ))
+    self[y]=$(( self[y] + $y ))
 }
 
 Rectangle() {
     local x y width height
     parse_args -su "x y width height" "$@"
 
-    local -n __=$__attrs
-    __[width]=$width; __[height]=$height
+    local -n self=$__self
+    self[width]=$width; self[height]=$height
 
     obj_super x=$x y=$y
 }
 obj_inherit Rectangle Shape
 
 Rectangle::draw() {
-    local -n __=$__attrs
-    echo "Drawing a $__type at (${__[x]},${__[y]})," \
-         "width ${__[width]}, height ${__[height]}"
+    local -n self=$__self
+    echo "Drawing a $__type at (${self[x]},${self[y]})," \
+         "width ${self[width]}, height ${self[height]}"
 }
-Rectangle::width=() { local -n __=$__attrs; __[width]=$1; }
-Rectangle::height=() { local -n __=$__attrs; __[height]=$1; }
+Rectangle::width=() { local -n self=$__self; self[width]=$1; }
+Rectangle::height=() { local -n self=$__self; self[height]=$1; }
 
 Circle() {
     local x y radius
     parse_args -su "x y radius" "$@"
 
-    local -n __=$__attrs
-    __[radius]=$radius
+    local -n self=$__self
+    self[radius]=$radius
 
     obj_super x=$x y=$y
 }
 obj_inherit Circle Shape
 
 Circle::draw() {
-    local -n __=$__attrs
-    echo "Drawing a $__type at (${__[x]},${__[y]}), radius ${__[radius]}"
+    local -n self=$__self
+    echo "Drawing a $__type at (${self[x]},${self[y]}), radius ${self[radius]}"
 }
-Circle::radius=() { local -n __=$__attrs; __[radius]=$1; }
+Circle::radius=() { local -n self=$__self; self[radius]=$1; }
 
 do_something_with_shape() {
     local shape=$1

@@ -1,3 +1,5 @@
+# Experimental!
+#
 # A module system built on top of Bashoo's object system.
 #
 # The primary purpose of a module is to provide namespace for variables and
@@ -13,15 +15,14 @@ declare -gA MODULES=()  # module fullname -> module object
 
 # Root of all module types.
 Module() {
-    local -n __=$__attrs
-    __[__self]=$__self
-    __[__type]=$__type
+    local -n self=$__self
+    self[__type]=$__type
     local f
     for f in $(compgen -A function -X "!$__type::*" || true); do
-        __[${f##*::}]="obj_msg $__self ${f##*::}"
+        self[${f##*::}]="obj_msg $__id ${f##*::}"
     done
 }
-Module::attrs() { ds_push $__attrs; }
+Module::self() { ds_push $__self; }
 
 mod_new() {
     obj_inherit $1 Module
@@ -38,37 +39,40 @@ __globals() { :; }
 mod_new __globals
 
 
-# When called with in a method, ds_push the $__attrs of the module, in which
-# the calling object's type is defined.
+# When called with in a method,  assign $__self of the module, in which
+# the calling object's type is defined, to $1. Usually, $1,  should have
+# been declared with local -n.
 #
-mod_attrs() {
+mod_self_to() {
     # if object's type is defined in a module
     local mtype=${__type%%::*}
     if [[ ${mtype%/*} != $mtype ]]; then
-        obj_msg ${MODULES[$mtype]} attrs
+        obj_msg ${MODULES[$mtype]} self
     else
-        obj_msg __globals attrs
+        obj_msg __globals self 
     fi
+    ds_pop_to "$1"
 }
 
 import() {
     local mpath=${1%.sh}
-    local oIFS=$IFS; IFS=/
-    local mods=($mpath.sh) pathes=()
-    for ((i=0; i < ${#mods[*]}; i++)); do
-        pathes[i]="${mods[*]:0:i+1}"
-    done
-    IFS=$oIFS
+    if [[ ! ${MODULES[$mpath]:-} ]]; then
+        local oIFS=$IFS; IFS=/
+        local mods=($mpath.sh) pathes=()
+        for ((i=0; i < ${#mods[*]}; i++)); do
+            pathes[i]="${mods[*]:0:i+1}"
+        done
+        IFS=$oIFS
 
-    local mod load_mod
-    for mod in "${pathes[@]}"; do
-        load_mod=$(load "$mod" "${mod%.sh}")
-        eval $load_mod
-        if [[ $load_mod != ': pass;' ]]; then
-            mod_new ${mod%.sh}
-        fi
-    done
-
-    obj_msg ${MODULES[${mpath}]} attrs
+        local mod load_mod
+        for mod in "${pathes[@]}"; do
+            load_mod=$(load "$mod" "${mod%.sh}")
+            eval $load_mod
+            if [[ $load_mod != ': pass;' ]]; then
+                mod_new ${mod%.sh}
+            fi
+        done
+    fi
+    obj_msg ${MODULES[${mpath}]} self
     ds_pop_to "${1##*/}"
 }
