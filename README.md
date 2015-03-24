@@ -1,15 +1,35 @@
-## DESCRIPTION
+## What is it?
 
-Bashoo is a library that makes it easy to write object-oriented Bash
-programs. Single inhertiance and polymorphism are supported.
-
-The goal is to develop tools and conventions that make writing
+Bashoo is a library/framework that makes it easy to write object-oriented Bash
+programs. The goal is to develop tools and conventions that make writing
 large and complex Bash programs easier and less error prone.
 
 It is being developed and tested with Bash 4.3.
 
+## Why?
 
-## SYNOPSIS
+If you are asking, WHY?! then Bashoo is probably not for you. Actually, I'd say
+most people won't need it for general everyday shell scripting. If you think you
+need it you are likely using the wrong tool for the job!
+
+However, it is, for me, an interesting challenge to see how far I can push the
+language, to make it work the way I want while still remain practical and useful.
+It's not a toy project and I do intend to use it to build something bigger and useful ;-)
+
+## Features and road map for v1.0.0
+
+- [x] A dedicated global stack for passing values between
+      function calls to reduce the need for command substitutions.
+- [x] Better error reporting with stack traces.
+- [x] An object and type system that supports single inheritance and polymorphism.
+- [x] A module system that provides namespaces for variables and functions.
+- [ ] Ability to mix-in modules to a type for greater code reuse.
+
+Bashoo is still under development, suggestions or ideas to improve it
+are very welcomed. Pull requests will be most appreciated!
+
+
+## So what does it look like?
 
 ```bash
 
