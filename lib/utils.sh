@@ -1,6 +1,21 @@
 eval $(load ds.sh)
 
 
+_BASE_ID=$RANDOM
+
+# Create an empty global array and push is name to DS.
+# Example usage:
+#   local -n my_array; array_new -A
+#   my_array=${DS[-1]}; ds_pop
+#   .... Use my_array just like a normal associative array ...
+#   unset my_array
+#
+array_new() {
+    local name=array_$((_BASE_ID++))
+    declare -g "$@" -- "$name=()"
+    ds_push "$name"
+}
+
 # This overrides the trap builtin to append commands to a signal.
 #
 trap() {
@@ -45,6 +60,12 @@ trap() {
 #     sets the variables named by the arg names to their values, and any
 #     unknown arguments are append to the _args var an array.
 #
+# Note:
+#    The local variable names, __arg, __argname, and __spec, are reserved 
+#    by this function. The implication is that the -s option won't be able
+#    to set the variables in its parent scope.
+#      
+#
 # Example:
 #   # At the start of a function:
 #   local arg1 arg2 arg3=() arg4=() _args
@@ -75,45 +96,45 @@ parse_args() {
     shift $(($OPTIND - 1))
 
     # parse the spec
-    local s arg; local -A spec
+    local s arg; local -A __spec
     for s in $1; do
         arg=${s%[?*+]}; s=${s##$arg}
-        spec[$arg]=${s:-1}
+        __spec[$arg]=${s:-1}
     done
     shift
 
     # validate arg name, count the args, and collect unknown args
-    local name unknown_args=(); local -A args=()
+    local __argname __unknown_args=(); local -A __args=()
     for arg; do
-        name=${arg%%=*}
-        [[ $name =~ ^[a-zA-Z_][0-9a-zA-Z_]*$ ]] || {
-            ds_push_err "Invalid argument name: $name"
+        __argname=${arg%%=*}
+        [[ $__argname =~ ^[a-zA-Z_][0-9a-zA-Z_]*$ ]] || {
+            ds_push_err "Invalid argument name: $__argname"
             return 1
         }
-        if [[ ${spec[$name]:-} ]]; then
-            (( args[$name]+=1 ))
+        if [[ ${__spec[$__argname]:-} ]]; then
+            (( __args[$__argname]+=1 ))
         elif [[ $check_unknown ]]; then
             ds_push_err "Unknown argument: $arg"; return 1
         else
-            unknown_args+=("$arg")  # collect unknown args
+            __unknown_args+=("$arg")  # collect unknown args
         fi
     done
 
     # check the arg counts against the spec
     local count
-    for name in "${!spec[@]}"; do
-        count=${args[$name]:-0}
-        case ${spec[$name]} in
+    for __argname in "${!__spec[@]}"; do
+        count=${__args[$__argname]:-0}
+        case ${__spec[$__argname]} in
             1) (( count == 1 )) || {
-                    ds_push_err "Exactly one '$name' argument is allowed!"
+                    ds_push_err "Exactly one '$__argname' argument is allowed!"
                     return 1
                } ;;
            \?) (( count <= 1 )) || {
-                    ds_push_err "'$name' argument may only appear at most once!"
+                    ds_push_err "'$__argname' argument may only appear at most once!"
                     return 1
                } ;;
            \+) (( count >= 1 )) || {
-                    ds_push_err "'$name' argument must appear at least once!"
+                    ds_push_err "'$__argname' argument must appear at least once!"
                     return 1
                } ;;
          esac
@@ -121,18 +142,21 @@ parse_args() {
 
      # set args that passed the spec
      if [[ $set_vars ]]; then
-         for arg; do
-             name=${arg%%=*}
-             [[ ${spec[$name]:-} ]] || continue
+         unset option check_unknown set_vars s arg count
+         local __arg
 
-             if [[ ${spec[$name]} != 1 ]]; then
-                 eval "$name+=( $(q "${arg#*=}") )"
+         for __arg; do
+             __argname=${__arg%%=*}
+             [[ ${__spec[$__argname]:-} ]] || continue
+
+             if [[ ${__args[$__argname]} != 1 ]]; then
+                 eval "$__argname+=( $(q "${__arg#*=}") )"
              else
-                 eval "$name=$(q "${arg#*=}")"
+                 eval "$__argname=$(q "${__arg#*=}")"
              fi
          done
-         if [[ ${unknown_args:-} ]]; then
-             _args+=("${unknown_args[@]}")
+         if [[ ${__unknown_args:-} ]]; then
+             _args+=("${__unknown_args[@]}")
          fi
      fi
 }

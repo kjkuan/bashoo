@@ -15,7 +15,6 @@ declare -gA MODULES=()  # module fullname -> module object
 
 # Root of all module types.
 Module() {
-    local -n self=$__self
     self[__type]=$__type
     local f
     for f in $(compgen -A function -X "!$__type::*" || true); do

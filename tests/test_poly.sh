@@ -12,7 +12,6 @@ Shape::move_to() {
     local x y
     parse_args -su "x y" "$@"
 
-    local -n self=$__self
     self[x]=$x; self[y]=$y
 }
 
@@ -20,7 +19,6 @@ Shape::rel_move_to() {
     local x y
     parse_args -su "x y" "$@"
 
-    local -n self=$__self
     self[x]=$(( self[x] + $x ))
     self[y]=$(( self[y] + $y ))
 }
@@ -29,37 +27,32 @@ Rectangle() {
     local x y width height
     parse_args -su "x y width height" "$@"
 
-    local -n self=$__self
     self[width]=$width; self[height]=$height
-
     obj_super x=$x y=$y
 }
 obj_inherit Rectangle Shape
 
 Rectangle::draw() {
-    local -n self=$__self
     echo "Drawing a $__type at (${self[x]},${self[y]})," \
          "width ${self[width]}, height ${self[height]}"
 }
-Rectangle::width=() { local -n self=$__self; self[width]=$1; }
-Rectangle::height=() { local -n self=$__self; self[height]=$1; }
+Rectangle::width=() { self[width]=$1; }
+Rectangle::height=() { self[height]=$1; }
 
 Circle() {
     local x y radius
     parse_args -su "x y radius" "$@"
 
-    local -n self=$__self
     self[radius]=$radius
-
     obj_super x=$x y=$y
 }
 obj_inherit Circle Shape
 
 Circle::draw() {
-    local -n self=$__self
+    
     echo "Drawing a $__type at (${self[x]},${self[y]}), radius ${self[radius]}"
 }
-Circle::radius=() { local -n self=$__self; self[radius]=$1; }
+Circle::radius=() { self[radius]=$1; }
 
 do_something_with_shape() {
     local shape=$1
@@ -89,5 +82,12 @@ main() {
     obj_free $rectangle
 }
 
-main
+output="\
+Drawing a Rectangle at (10,20), width 5, height 6
+Drawing a Rectangle at (110,120), width 5, height 6
+Drawing a Circle at (15,25), radius 8
+Drawing a Circle at (115,125), radius 8
+Drawing a Rectangle at (0,0), width 30, height 15"
+
+[[ $(main) = "$output" ]]
 

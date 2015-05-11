@@ -48,7 +48,7 @@ test_2() {
 
 
 
-if [[ $BASH_SOURCE = $0 ]]; then
+if [[ $BASH_SOURCE = "$0" ]]; then
     test_run_all
 fi
 

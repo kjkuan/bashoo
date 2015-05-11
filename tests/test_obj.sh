@@ -12,25 +12,22 @@ eval $(
 Shape() { # <x> <y> [color]
     local x y color
     parse_args -us "x y color?" "$@"
-
-    local -n self=$__self
     self[x]=$x
     self[y]=$y
     self[color]=${color:-"black"}
 }
-Shape::color() { local -n self=$__self; ds_push "${self[color]}"; }
-Shape::color=() { local -n self=$__self; self[color]=$1; }
-Shape::str() { local -n self=$__self; ds_push "$__type(${self[color]})"; }
+Shape::color() { ds_push "${self[color]}"; }
+Shape::color=() { self[color]=$1; }
+Shape::str() { ds_push "$__type(${self[color]})"; }
 Shape::area() { return 1; }
 Shape::draw() { return 1; }
-Shape::position() { local -n self=$__self; ds_push "${self[x]},${self[y]}"; }
+Shape::position() { ds_push "${self[x]},${self[y]}"; }
 
 
 Rectangle() { # <x> <y> <width> <height>
     local width height _args=(obj_super)
     parse_args -s "width height" "$@"
 
-    local -n self=$__self
     self[width]=$width self[height]=$height
 
     "${_args[@]}"
@@ -38,7 +35,6 @@ Rectangle() { # <x> <y> <width> <height>
 obj_inherit Rectangle Shape
 
 Rectangle::area() {
-    local -n self=$__self
     ds_push $(( self[width] * self[height] ))
 }
 Rectangle::resize() {
@@ -49,8 +45,6 @@ Rectangle::resize() {
         ds_push_err "At least one of width or height argument must be provided!"
         return 1
     fi
-
-    local -n self=$__self
 
     case $width in 
         [+-]*) self[width]=$(( self[width] + width )) ;;
@@ -65,7 +59,6 @@ Rectangle::draw() { # <canvas>
     local canvas=${1#*=}
     obj_msg $canvas add_shape $__id
 
-    local -n self=$__self
     echo "Drawing $__type at (${self[x]}, ${self[y]}) on a canvas..."
 }
 
@@ -85,8 +78,6 @@ Square::resize() {
     width=${width:-$height}
     height=${height:-$width}
 
-    local -n self=$__self
-
     local old_width=${self[width]} old_height=${self[height]}
 
     obj_msg -p $self resize width=$width height=$height
@@ -101,24 +92,20 @@ Square::__unset__() { ds_push "I'm being freed!"; }
 
 Canvas() {
     obj_super
-    local -n self=$__self
 
     local array=array_$RANDOM
     declare -ga "$array=()"
     self[shapes]=$array
 }
 Canvas::__unset__() {
-   local -n self=$__self 
    unset ${self[shapes]}
 }
 
 Canvas::add_shape() { # <shape>
-    local -n self=$__self
     local -n shapes=${self[shapes]}
     shapes+=("$1")
 }
 Canvas::push_shapes() {
-    local -n self=$__self
     local -n shapes=${self[shapes]}
     ds_push "${shapes[@]}"
 }
@@ -126,11 +113,9 @@ Canvas::push_shapes() {
 
 
 A() {
-    local -n self=$__self
     self[attr1]=aaa
 }
 A::method_a1() {
-    local -n self=$__self
     self[attr1]=aaa1
 
     local b=$1
@@ -139,22 +124,18 @@ A::method_a1() {
     self[attr1]+=11
 }
 A::method_a2() {
-    local -n self=$__self
     self[attr2]=aaa2
     self[attr1]+=a
 }
 A::method_a3() {
-    local -n self=$__self
     ds_push "A's attr1 is ${self[attr1]}"
     ds_push "A's attr2 is ${self[attr2]}"
 }
 
 B() {
-    local -n self=$__self
     self[attr1]=bbb
 }
 B::method_b() {
-    local -n self=$__self
     ds_push "B's attr1 is ${self[attr1]}"
 
     local a=$1
@@ -205,7 +186,7 @@ test_object_creation_message_passing_and_polymorphism() {
     obj_new Canvas; ds_pop_to canvas
     obj_msg $rectangle draw canvas=$canvas
     obj_msg $canvas push_shapes
-    [[ ${DS[-1]} = $rectangle ]]; ds_pop
+    [[ ${DS[-1]} = "$rectangle" ]]; ds_pop
 
     obj_free $rectangle
     obj_free $canvas
@@ -229,9 +210,22 @@ test_two_objects_messaging_each_other() {
     obj_free $b
 }
 
+test_obj_eval() {
+    obj_new Shape x=1 y=2 color=green
+    local shape; ds_pop_to shape
+    obj_eval $shape '
+        ds_push "${self[x]}" "${self[y]}" "${self[color]}"
+    '
+    local x y color
+    ds_pop_to x y color
+    [[ $x = 1 ]]
+    [[ $y = 2 ]]
+    [[ $color = green ]]
+}
 
 
-if [[ $BASH_SOURCE = $0 ]]; then
+
+if [[ $BASH_SOURCE = "$0" ]]; then
     test_run_all
 fi
 

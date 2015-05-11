@@ -74,7 +74,7 @@ test_calling_from_parent_function_and_then_from_outside() {
 }
 
 
-if [[ $BASH_SOURCE = $0 ]]; then
+if [[ $BASH_SOURCE = "$0" ]]; then
     test_run_all
 fi
 
