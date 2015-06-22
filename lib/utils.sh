@@ -20,6 +20,7 @@ array_new() {
 #
 trap() {
     local option has_option
+    OPTIND=1
     while getopts ':lp' option; do
         case $option in
             l|p) has_option=1 ;;
@@ -44,8 +45,9 @@ trap() {
             continue
         fi
         lines[0]="builtin trap ${lines[0]#trap }"
-        lines[-1]="${lines[-1]% *}\;$(printf "%q" "$cmd") $signal"
-        eval "${lines[@]}"
+        lines[-1]="${lines[-1]%\'*}
+                   $cmd' $signal"
+        eval "${lines[*]}"
     done
 }
 

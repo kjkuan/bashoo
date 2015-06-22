@@ -29,16 +29,16 @@ mod_new() {
         ds_push ${MODULES[$1]}
     else
         obj_new $1
-        MODULES[$1]=${DS[-1]}; ds_pop
     fi
 }
 
 # Default module for anything not explicitly defined in a module.
 __globals() { :; }
 mod_new __globals
+MODULES[__globals]=${DS[-1]}; ds_pop
 
 
-# When called with in a method,  assign $__self of the module, in which
+# When called with in a method,  assign $self of the module, in which
 # the calling object's type is defined, to $1. Usually, $1,  should have
 # been declared with local -n.
 #
@@ -54,24 +54,25 @@ mod_self_to() {
 }
 
 import() {
-    local mpath=${1%.sh}
-    if [[ ! ${MODULES[$mpath]:-} ]]; then
+    local -r __mpath=${1%.sh}
+    if [[ ! ${MODULES[$__mpath]:-} ]]; then
         local oIFS=$IFS; IFS=/
-        local mods=($mpath.sh) pathes=()
+        local mods=($__mpath.sh) pathes=()
         for ((i=0; i < ${#mods[*]}; i++)); do
             pathes[i]="${mods[*]:0:i+1}"
         done
-        IFS=$oIFS
+        IFS=$oIFS; unset oIFS mods
 
-        local mod load_mod
-        for mod in "${pathes[@]}"; do
-            load_mod=$(load "$mod" "${mod%.sh}")
-            eval $load_mod
-            if [[ $load_mod != ': pass;' ]]; then
-                mod_new ${mod%.sh}
+        local __mod __load_mod
+        for __mod in "${pathes[@]}"; do
+            __load_mod=$(load "$__mod" "${__mod%.sh}")
+            eval $__load_mod
+            if [[ $__load_mod != ': pass;' ]]; then
+                mod_new ${__mod%.sh}
+                MODULES[${__mod%.sh}]=${DS[-1]}; ds_pop
             fi
         done
     fi
-    obj_msg ${MODULES[${mpath}]} self
+    obj_msg ${MODULES[${__mpath}]} self
     ds_pop_to "${1##*/}"
 }
