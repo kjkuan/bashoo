@@ -164,4 +164,22 @@ parse_args() {
 }
 
 
-
+# Print the contents of a local file to stdout.
+# The file content is subject to parameter expansions and process substitutions.
+#
+# Output lines(with optional leading space characters) that begin with the
+# character sequence #: will be removed from the output. 
+#
+# In cases where variable assignment is needed, parameter expansion
+# can be used to achieve the desired side effect.
+#
+bash_tpl() {
+    local EOF_MARKER=EOF_$(LC_CTYPE=C tr -cd 'a-f0-9' </dev/urandom | head -c 16)
+    [[ ${#EOF_MARKER} = 20 ]]
+    (
+        source <(echo "cat <<$EOF_MARKER
+$(<"$1")
+$EOF_MARKER
+"       )
+    ) | sed '/^[[:space:]]*#:.*$/d'
+}
