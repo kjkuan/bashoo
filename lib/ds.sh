@@ -42,7 +42,7 @@ ds_dup_n() {
     local n=${1:-1} top=${DS[-1]}
     while (( n-- )); do ds_push "$top"; done
 }
-ds_swap() { local a=${DS[-1]} b=${DS[-2]}; ds_push "$b" "$a"; }
+ds_swap() { local tmp; (( tmp=DS[-2], DS[-2]=DS[-1], DS[-1]=tmp )) || true; }
 
 #= Usage: ds_echo
 #= Description: Echo the top item on the stack.
@@ -61,11 +61,12 @@ ds_echo_pop() { ds_echo; ds_pop; }
 #=     where item_N is the top item on the stack.
 #
 ds_pop_to() {
-    local name i=$(( ${#DS[@]} - $# ))
-    for name; do
-        eval "$name=\${DS[$((i++))]}"
+    ds_push $(( $# + 1 ))
+    while (( $# > 0 )); do
+        eval "$1=\${DS[${#DS[@]} - $# - 1]}"
+        shift
     done
-    ds_pop_n $#
+    ds_pop_n ${DS[-1]}
 }
 
 #= Usage: ds_push_err <error_message>
