@@ -26,23 +26,26 @@ This
 is the second trap!"
 
     [[ $output = "$expected" ]]
-
-
 }
 
-test_parse_args() {
-    local  arg1=a arg2=b arg3=c _args=()
+test_unpack() {
+    local  arg1=a arg2=b arg3=c args=(); local -A kws=()
+    unpack arg3=3 arg2=2 arg1=1 "arg1 arg2 arg3"
+    [[ "$arg1 $arg2 $arg3" = "1 2 3" && ${#args[*]} = 0 && ${#kws[*]} = 0 ]]
 
-    parse_args "arg1 arg2 arg3" arg3=3 arg2=2 arg1=1 arg4=4
-    [[ "$arg1 $arg2 $arg3" = "a b c" && ${#_args[*]} = 0 ]]
+    local  arg1=a arg2=b arg3=c args=(); local -A kws=()
+    unpack arg3=3 arg2=2 arg1=1 arg4=4 "arg1 arg2 arg3" || true
+    [[ "$arg1 $arg2 $arg3" = "1 2 3" && ${#args[*]} = 0 && ${#kws[*]} = 0 ]]
+    [[ $(echo "${DS[-1]}" | tail -1) == "Unknown named argument: arg4=4" ]]; ds_pop
 
-    parse_args -u "arg1 arg2 arg3" arg3=3 arg2=2 arg1=1 arg4=4 || true
-    [[ $(echo "${DS[-1]}" | tail -1) = "Unknown argument: arg4=4" ]]; ds_pop
+    local  arg1=a arg2=b arg3=c args=(); local -A kws=()
+    unpack arg3=3 arg2=2 arg1=1 arg4=4 arg5 arg6 "arg1 arg2 arg3 *args"
+    [[ "$arg1 $arg2 $arg3" = "1 2 3" && "${args[*]}" = "arg4=4 arg5 arg6" && ${#kws[*]} = 0 ]]
 
-    parse_args -s "arg1 arg2 arg3" arg3=3 arg2=2 arg1=1 arg4=4 arg5=5
-    [[ "$arg1 $arg2 $arg3" = "1 2 3" ]]
-    [[ ${#_args[*]} = 2 ]]
-    [[ ${_args[*]} = "arg4=4 arg5=5" ]]
+    local  arg1=a arg2=b arg3=c args=(); local -A kws=()
+    unpack arg3=3 arg2=2 arg1=1 arg4=4 arg5 arg6 "arg1 arg2 arg3 **kws"
+    [[ "$arg1 $arg2 $arg3" = "1 2 3" && "${#args[*]}" = 0 ]]
+    [[ ${kws[arg4]} = 4 && ${kws[arg5]} = arg5 && ${kws[arg6]} = arg6 && ${#kws[*]} = 3 ]]
 }
 
 

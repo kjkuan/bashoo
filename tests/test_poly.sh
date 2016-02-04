@@ -9,23 +9,24 @@ Shape() { obj_msg $__id move_to "$@"; }
 Shape::draw() { ds_push_err "Not implemented!"; return 1; }
 
 Shape::move_to() {
-    local x y
-    parse_args -su "x y" "$@"
+    local x y; unpack "$@" "x y"
+    [[ $x && $y ]] || return 1
 
     self[x]=$x; self[y]=$y
 }
 
 Shape::rel_move_to() {
-    local x y
-    parse_args -su "x y" "$@"
+    local x y; unpack "$@" "x y"
+    [[ $x && $y ]] || return 1
 
-    self[x]=$(( self[x] + $x ))
-    self[y]=$(( self[y] + $y ))
+    self[x]=$(( self[x] + x ))
+    self[y]=$(( self[y] + y ))
 }
 
 Rectangle() {
     local x y width height
-    parse_args -su "x y width height" "$@"
+    unpack "$@" "x y width height"
+    [[ $width && $height ]] || return 1
 
     self[width]=$width; self[height]=$height
     obj_super x=$x y=$y
@@ -41,7 +42,8 @@ Rectangle::height=() { self[height]=$1; }
 
 Circle() {
     local x y radius
-    parse_args -su "x y radius" "$@"
+    unpack "$@" "x y radius"
+    [[ $radius ]] || return 1
 
     self[radius]=$radius
     obj_super x=$x y=$y

@@ -36,7 +36,7 @@ Object::__unset__() { :; }
 #=     is implicitly assumed to be `Object`.
 #
 obj_inherit() {
-    if [[ ! ${_OBJ_TYPE_PARENT[$1]:-} && $1 != $2 ]]; then
+    if [[ ! ${_OBJ_TYPE_PARENT[$1]:-} && $1 != "$2" ]]; then
         _OBJ_TYPE_PARENT[$1]=$2
     fi
 }
@@ -112,8 +112,8 @@ obj_free() {
     if [[ ${OBJ[$1]} ]]; then
         obj_msg $1 __unset__
         unset ${OBJ[$1]}
-        unset OBJ\["$1"\]
-        _obj_FREED_IDs+=($1)
+        unset "OBJ[$1]"
+        _obj_FREED_IDs+=("$1")
     else
         ds_push_err "Object '$1' doesn't exist!"
         return 1

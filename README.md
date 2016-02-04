@@ -43,7 +43,7 @@ source bashoo.sh
 # The name of the function is the type.
 Shape() {
     # Send the move_to message to the object itself with two named arguments.
-    obj_msg $self move_to x=$1 y=$2
+    obj_msg $self move_to x=$x y=$y
 
     # NOTE: $self expands to $__id, a special variable that identifies the
     #       object itself. self is actually an associative array holding the
@@ -54,11 +54,13 @@ Shape() {
 # where <type> is the type the method belongs to.
 Shape::move_to() {
     # Check named arguments and assign them to local vars.
-    # x and y are required. See lib/utils.sh#parse_args for detailed spec.
-    local x y
-    parse_args -s "x y" "$@"
-
-    self[x]=$1; self[y]=$2
+    # x and y are required. See lib/utils.sh#unpack for detailed spec.
+    local x y; unpack "$@" "x y"
+    [[ $x && $y ]] || {
+        ds_push_err "Both x and y coordinates are required!"
+        return 1
+    }
+    self[x]=$x; self[y]=$y
 }
 
 # An abstract method, needs to be implemented by a subtype.

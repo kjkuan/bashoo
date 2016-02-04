@@ -51,116 +51,111 @@ trap() {
     done
 }
 
-# Usage: parse_args [-u][-s] <spec> "$@"
-# Description:
-#     Parse the name=value arguments in "$@", checking them against spec.
-#     Exit 1 if "$@" fails the spec.
-#
-#     If -u is specified then any unknown argument fails the spec. 
-#
-#     If -s is specified and the spec is verified successfully, then, also
-#     sets the variables named by the arg names to their values, and any
-#     unknown arguments are append to the _args var an array.
-#
-# Note:
-#    The local variable names, __arg, __argname, and __spec, are reserved 
-#    by this function. The implication is that the -s option won't be able
-#    to set the variables in its parent scope.
-#      
-#
-# Example:
-#   # At the start of a function:
-#   local arg1 arg2 arg3=() arg4=() _args
-#   parse_args -s "arg1 arg2? arg3* arg4+" "$@"
-#
-#   arg1 is required.
-#   arg2 is optional.
-#   arg3 can appear zero or more times.
-#   arg4 must appear at least once.
-#
-#   Lets say, "$@" is "arg1=value1" "arg3=value3" "arg4=4" "arg4=44" "arg5=5"
-#
-#   If "$@" passed the spec then the local var, arg1 will be set to "value1";
-#   arg2 will be not be set; arg3 will be set to ("value3"); arg4 will be set
-#   to (4 44); _args will be set to (5).
-#   
-#
-parse_args() {
-    local option check_unknown= set_vars=
-    OPTIND=1
-    while getopts ':us' option "$@"; do
-        case $option in
-            u) check_unknown=1 ;;
-            s) set_vars=1 ;;
-           \?) ds_push_err "Invalid option: -$option"; return 1 ;;
-        esac
-    done
-    shift $(($OPTIND - 1))
-
-    # parse the spec
-    local s arg; local -A __spec
-    for s in $1; do
-        arg=${s%[?*+]}; s=${s##$arg}
-        __spec[$arg]=${s:-1}
-    done
-    shift
-
-    # validate arg name, count the args, and collect unknown args
-    local __argname __unknown_args=(); local -A __args=()
-    for arg; do
-        __argname=${arg%%=*}
-        [[ $__argname =~ ^[a-zA-Z_][0-9a-zA-Z_]*$ ]] || {
-            ds_push_err "Invalid argument name: $__argname"
-            return 1
+unpack() {
+    while (($# > 1)); do
+        [[ " ${!#} " == *" ${1%%=*} "* ]] || {
+            ds_push_err "Unknown argument: $1"; return 1
         }
-        if [[ ${__spec[$__argname]:-} ]]; then
-            (( __args[$__argname]+=1 ))
-        elif [[ $check_unknown ]]; then
-            ds_push_err "Unknown argument: $arg"; return 1
-        else
-            __unknown_args+=("$arg")  # collect unknown args
-        fi
+        [[ ${1%%=*} =~ ^[a-zA-Z_][0-9a-zA-Z_]*$ ]] || {
+            ds_push_err "Invalid name for named argument: $1"; return 1
+        }
+        printf -v "${1%%=*}" -- "%s" "${1#*=}"
+        shift
     done
+}
 
-    # check the arg counts against the spec
-    local count
-    for __argname in "${!__spec[@]}"; do
-        count=${__args[$__argname]:-0}
-        case ${__spec[$__argname]} in
-            1) (( count == 1 )) || {
-                    ds_push_err "Exactly one '$__argname' argument is allowed!"
-                    return 1
-               } ;;
-           \?) (( count <= 1 )) || {
-                    ds_push_err "'$__argname' argument may only appear at most once!"
-                    return 1
-               } ;;
-           \+) (( count >= 1 )) || {
-                    ds_push_err "'$__argname' argument must appear at least once!"
-                    return 1
-               } ;;
-         esac
-     done
 
-     # set args that passed the spec
-     if [[ $set_vars ]]; then
-         unset option check_unknown set_vars s arg count
-         local __arg
+#= Usage: unpack <arg1 arg2 ...> "param1 param2 ..."
+#= Description:
+#=     Unpack arguments into vars in the parent scope.
+#=
+#=     A named argument is of the form: name=value, where name must be a
+#=     valid bash identifier, unless it or the whole argument will be
+#=     collected by either a *parameter or a **parameter.
+#=     Each of the <arg1 arg2 ...> argument can be a named argument.
+#=
+#=     The last argument to the unpack function is a list of parameter names
+#=     that correspond to the names of the named arguments you wish to unpack.
+#=     'unpack' will only assign to variables named in the parameter list.
+#=
+#=     If a parameter is prefixed with '*' then it's assumed to be an indexed
+#=     array. If a parameter is prefixed with '**' then it's assumed to be an
+#=     associative array. There should only be at most one *param and one
+#=     **param. Any named arguments not assigned to the variables named in
+#=     the parameter list will be collected by the **param if it's specified;
+#=     otherwise they will be collected by the *param. (So, actually, you either
+#=     want to specify a *param or a **param, but not both).
+#=
+#= Example:
+#=
+#=     myfunc() {
+#=       local params=(arg1 arg2 arg3)
+#=       local -- "${params[@]}" args=(); local -A kws
+#=       unpack "$@" "${params[*]} *args"
+#=       echo $arg1
+#=       echo "$arg2"
+#=       echo $arg3
+#=       echo "${args[@]}"
+#=       echo "${kws[arg4]}"
+#=       echo "${kws[arg5]}"
+#=       echo "${kws[arg6]}"
+#=       echo "${kws[arg7]}"
+#=     }
+#=
+#=     myfunc arg1=value1 arg2="another  value" arg3 arg4 arg5 arg6=value6 arg7=value7
+#=
+#=   The output should be:
+#=
+#=     value1
+#=     another  value
+#=     arg3
+#=     arg4 arg5 arg6=value6 arg7=value7
+#=
+#=   If, however, the above unpack invocation is: unpack "$@" "${param[*]} *args **kws"
+#=   then the output would be:
+#=
+#=     value1
+#=     another  value
+#=
+#=     arg4
+#=     arg5
+#=     value6
+#=     value7
+#=
+unpack() {
+    while (($# > 1)); do
 
-         for __arg; do
-             __argname=${__arg%%=*}
-             [[ ${__spec[$__argname]:-} ]] || continue
+        # if the arg is named (i.e., it's a "name=value" pair),
+        # or it has no = sign in it(i.e., it's just a single "value").
+        #
+        if [[ ${1%%=*} ]]; then
 
-             if [[ ${__args[$__argname]} != 1 ]]; then
-                 eval "$__argname+=( $(q "${__arg#*=}") )"
-             else
-                 eval "$__argname=$(q "${__arg#*=}")"
-             fi
-         done
-         if [[ ${__unknown_args:-} ]]; then
-             _args+=("${__unknown_args[@]}")
-         fi
-     fi
+            # if the arg name is in the formal parameter list
+            if [[ " ${!#} " == *" ${1%%=*} "* ]]; then
+                printf -v "${1%%=*}" -- "%s" "${1#*=}"  # set it
+
+            # else if there's a ** parameter that collects
+            # unknown named args then assign its value under the named key.
+            #
+            # NOTE: if the arg has no = sign then its value is the same as
+            #       its name.
+            elif [[ " ${!#} " =~ \ \*\*([^* ]+)\  ]]; then
+                printf -v "${BASH_REMATCH[1]}[${1%%=*}]" -- "%s" "${1#*=}"
+
+            # else if there's a * parameter(an array) that collects unknown
+            # args, then append the whole arg to the array.
+            #
+            elif  [[ " ${!#} " =~ \ \*([^* ]+)\  ]]; then
+                printf -v "DS[${#DS[*]}]" "%q" "$1"
+                eval "${BASH_REMATCH[1]}+=(${DS[-1]})"; ds_pop
+            else
+                ds_push_err "Unknown named argument: $1"; return 1
+            fi
+        else
+            ds_push_err "Unknown unamed argument: $1"; return 1
+        fi
+        shift
+    done
 }
 
 

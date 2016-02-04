@@ -10,8 +10,9 @@ eval $(
 
 
 Shape() { # <x> <y> [color]
-    local x y color
-    parse_args -us "x y color?" "$@"
+    local params=(x y color); local "${params[@]}"
+    unpack "$@" "${params[*]}"
+    [[ $x && $y ]] || return 1
     self[x]=$x
     self[y]=$y
     self[color]=${color:-"black"}
@@ -25,12 +26,14 @@ Shape::position() { ds_push "${self[x]},${self[y]}"; }
 
 
 Rectangle() { # <x> <y> <width> <height>
-    local width height _args=(obj_super)
-    parse_args -s "width height" "$@"
+    local width height args=(obj_super)
+    unpack "$@" "width height *args"
+    [[ $width && $height ]] || return 1
 
     self[width]=$width self[height]=$height
 
-    "${_args[@]}"
+    echo "${args[@]}"
+    "${args[@]}"
 }
 obj_inherit Rectangle Shape
 
@@ -39,7 +42,7 @@ Rectangle::area() {
 }
 Rectangle::resize() {
     local width height
-    parse_args -us "width? height?" "$@"
+    unpack "$@" "width height"
 
     if [[ ! $width && ! $height ]]; then
         ds_push_err "At least one of width or height argument must be provided!"
@@ -64,16 +67,17 @@ Rectangle::draw() { # <canvas>
 
 
 Square() { # <x> <y> <size>
-    local size _args=(obj_super)
-    parse_args -s "size" "$@"
+    local size args=(obj_super)
+    unpack "$@" "size *args"
+    [[ $size ]] || return 1
 
-    "${_args[@]}" width=$size height=$size 
+    "${args[@]}" width=$size height=$size 
 }
 obj_inherit Square Rectangle
 
 Square::resize() {
-    local width height _args=()
-    parse_args -s "width? height?" "$@"
+    local width height
+    unpack "$@" "width height"
 
     width=${width:-$height}
     height=${height:-$width}
