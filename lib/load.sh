@@ -29,54 +29,44 @@ print_stack_trace() {
 q() { if [[ $@ ]]; then printf "%q" "$@"; fi; }
 qn() { if [[ $@ ]]; then printf "%q\n" "$@"; fi; }
 
-
-# Usage: eval $(load <relative_source_path> [arg1 arg2 ...])
-# Description:
-#     Source the file by searching through LOAD_SH_PATH looking for the first
-#     directory, X, such that $X/$relative_source_path exists, and then load it.
-#
-load() {
-    local path mpath=$1; shift
+_find_sh_module() {
+    local path mpath=$1
     local pathes oIFS=$IFS
     IFS=:; pathes=($LOAD_SH_PATH); IFS=$oIFS
 
     for path in "${pathes[@]}"; do
         path=$path/$mpath
-        [[ ${SOURCE_LOADED[$path]:-""} ]] && return
-
-        #FIXME: added for the module system. Document this!
-        if [[ -d "$path" ]]; then
-            if [[ -e "$path/__mod.sh" ]]; then
-                path=$path/__mod.sh
-            else
-                echo : pass\;
-                return
-            fi
-        fi
-
         if [[ -e $path ]]; then
-            path=$(q "$(readlink -f "$path")")
-
-            # NOTE: Non-local bash variables are dynamically scoped!
-            #       This is why we don't source the module within this function
-            #       because doing so would expose all local variables here
-            #       to any non-local variables of the same name in the
-            #       sourced file.
-            # 
-            #       Moreoever, sourcing within a function causes any
-            #       declarations of associative array variables in
-            #       the sourced file to be declared in a function, and
-            #       thus, defaults to local scope unless -g is specified.
-            #
-            echo '[[ ${SOURCE_LOADED['$path']:-} ]] || {'
-            echo source $path $(qn "$@") \;
-            echo SOURCE_LOADED\[$path\]=$(q "$mpath") \;
-            echo '};'
+            readlink -f "$path"
             return
         fi
     done
-    echo "echo 'Source, $(q "$mpath"), not found in" \
-         "\$LOAD_SH_PATH: $(q "$LOAD_SH_PATH")' >&2; false;"
+}
+
+# Usage: load <relative_source_path> [arg1 arg2 ...]
+# Description:
+#     Source the file by searching through LOAD_SH_PATH looking for the first
+#     directory, X, such that $X/$relative_source_path exists, and then load it.
+#
+# Note: This function should only be called from the global/top level in a
+#       source file.
+#
+load() {
+    if [[ ! ${DS:-} ]]; then
+        DS[0]=$(_find_sh_module "$1")
+    else
+        DS[${#DS[*]}]=$(_find_sh_module "$1")
+    fi
+    if [[ ! ${DS[-1]:-} ]]; then
+        unset 'DS[-1]'
+        echo "Source, $1, not found in \$LOAD_SH_PATH: $LOAD_SH_PATH" >&2
+        return 1
+    fi
+    if [[ ! ${SOURCE_LOADED[${DS[-1]}]:-} ]]; then
+        source "${DS[-1]}" "${@:2}"
+        SOURCE_LOADED[${DS[-1]}]=$1
+    fi
+    unset 'DS[-1]'
 }
 
 

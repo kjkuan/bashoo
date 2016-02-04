@@ -2,10 +2,9 @@
 
 set -eEu
 source bashoo.sh
-eval $(
-  load def.sh
-  load test.sh
-)
+
+load def.sh
+load test.sh
 
 times() {
     local factor=$1

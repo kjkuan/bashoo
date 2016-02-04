@@ -3,10 +3,8 @@
 set -eEu
 source bashoo.sh
 
-eval $(
-  load utils.sh 
-  load test.sh
-)
+load utils.sh 
+load test.sh
 
 test_trap() {
     export -f trap

@@ -1,4 +1,4 @@
-eval $(load ds.sh)
+load ds.sh
 
 # Our object pool, collecting all objects created by `obj_new`.
 # It's actually a `obj_id -> attribute_map_id` map, where `obj_id` is

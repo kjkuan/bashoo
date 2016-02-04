@@ -1,4 +1,4 @@
-eval $(load ds.sh)
+load ds.sh
 
 
 _BASE_ID=$RANDOM

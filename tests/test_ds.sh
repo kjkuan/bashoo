@@ -3,10 +3,8 @@ set -eEu
 
 source bashoo.sh
 
-eval $(
-  load ds.sh 
-  load test.sh
-)
+load ds.sh 
+load test.sh
 
 
 test_1(){

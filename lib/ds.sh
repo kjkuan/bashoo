@@ -13,7 +13,7 @@
 #= To get the last $N item on the stack:     ${DS[@]: -N}
 #= To pop the last $N items off the stack:   ds_pop $N
 #
-DS=()
+declare -ag DS
 
 #= Usage: ds_push item1 item2 ...
 #= Description:

@@ -4,7 +4,5 @@ export LOAD_SH_PATH=$(cd "${BASH_SOURCE%/*}/../lib" && pwd
 source "${BASH_SOURCE%/*}/../lib/load.sh"
 trap print_stack_trace ERR
 
-eval $(
-    load utils.sh
-    load obj.sh
-)
+load utils.sh
+load obj.sh
