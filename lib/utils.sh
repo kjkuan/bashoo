@@ -3,6 +3,11 @@ load ds.sh
 
 _BASE_ID=$RANDOM
 
+# Helper functions
+q() { if [[ $@ ]]; then printf "%q" "$@"; fi; }
+qn() { if [[ $@ ]]; then printf "%q\n" "$@"; fi; }
+
+
 # Create an empty global array and push is name to DS.
 # Example usage:
 #   local -n my_array; array_new -A
@@ -52,63 +57,63 @@ trap() {
 }
 
 
-#= Usage: unpack <arg1 arg2 ...> "param1 param2 ..."
-#= Description:
-#=     Unpack arguments into vars in the parent scope.
-#=
-#=     A named argument is of the form: name=value, where name must be a
-#=     valid bash identifier, unless it or the whole argument will be
-#=     collected by either a *parameter or a **parameter.
-#=     Each of the <arg1 arg2 ...> argument can be a named argument.
-#=
-#=     The last argument to the unpack function is a list of parameter names
-#=     that correspond to the names of the named arguments you wish to unpack.
-#=     'unpack' will only assign to variables named in the parameter list.
-#=
-#=     If a parameter is prefixed with '*' then it's assumed to be an indexed
-#=     array. If a parameter is prefixed with '**' then it's assumed to be an
-#=     associative array. There should only be at most one *param and one
-#=     **param. Any named arguments not assigned to the variables named in
-#=     the parameter list will be collected by the **param if it's specified;
-#=     otherwise they will be collected by the *param. (So, actually, you either
-#=     want to specify a *param or a **param, but not both).
-#=
-#= Example:
-#=
-#=     myfunc() {
-#=       local params=(arg1 arg2 arg3)
-#=       local -- "${params[@]}" args=(); local -A kws
-#=       unpack "$@" "${params[*]} *args"
-#=       echo $arg1
-#=       echo "$arg2"
-#=       echo $arg3
-#=       echo "${args[@]}"
-#=       echo "${kws[arg4]}"
-#=       echo "${kws[arg5]}"
-#=       echo "${kws[arg6]}"
-#=       echo "${kws[arg7]}"
-#=     }
-#=
-#=     myfunc arg1=value1 arg2="another  value" arg3 arg4 arg5 arg6=value6 arg7=value7
-#=
-#=   The output should be:
-#=
-#=     value1
-#=     another  value
-#=     arg3
-#=     arg4 arg5 arg6=value6 arg7=value7
-#=
-#=   If, however, the above unpack invocation is: unpack "$@" "${param[*]} *args **kws"
-#=   then the output would be:
-#=
-#=     value1
-#=     another  value
-#=
-#=     arg4
-#=     arg5
-#=     value6
-#=     value7
-#=
+# Usage: unpack <arg1 arg2 ...> "param1 param2 ..."
+# Description:
+#     Unpack arguments into vars in the parent scope.
+#
+#     A named argument is of the form: name=value, where name must be a
+#     valid bash identifier, unless it or the whole argument will be
+#     collected by either a *parameter or a **parameter.
+#     Each of the <arg1 arg2 ...> argument can be a named argument.
+#
+#     The last argument to the unpack function is a list of parameter names
+#     that correspond to the names of the named arguments you wish to unpack.
+#     'unpack' will only assign to variables named in the parameter list.
+#
+#     If a parameter is prefixed with '*' then it's assumed to be an indexed
+#     array. If a parameter is prefixed with '**' then it's assumed to be an
+#     associative array. There should only be at most one *param and one
+#     **param. Any named arguments not assigned to the variables named in
+#     the parameter list will be collected by the **param if it's specified;
+#     otherwise they will be collected by the *param. (So, actually, you either
+#     want to specify a *param or a **param, but not both).
+#
+# Example:
+#
+#     myfunc() {
+#       local params=(arg1 arg2 arg3)
+#       local -- "${params[@]}" args=(); local -A kws
+#       unpack "$@" "${params[*]} *args"
+#       echo $arg1
+#       echo "$arg2"
+#       echo $arg3
+#       echo "${args[@]}"
+#       echo "${kws[arg4]}"
+#       echo "${kws[arg5]}"
+#       echo "${kws[arg6]}"
+#       echo "${kws[arg7]}"
+#     }
+#
+#     myfunc arg1=value1 arg2="another  value" arg3 arg4 arg5 arg6=value6 arg7=value7
+#
+#   The output should be:
+#
+#     value1
+#     another  value
+#     arg3
+#     arg4 arg5 arg6=value6 arg7=value7
+#
+#   If, however, the above unpack invocation is: unpack "$@" "${param[*]} *args **kws"
+#   then the output would be:
+#
+#     value1
+#     another  value
+#
+#     arg4
+#     arg5
+#     value6
+#     value7
+#
 unpack() {
     while (($# > 1)); do
 

@@ -9,7 +9,8 @@ declare -A SOURCE_LOADED  # absolute file path -> module relative path
 #
 # Usage: trap 'print_stack_trace' ERR
 # Description:
-#    For any serious bash scripting, it's highly recommended that you
+#    For any serious bash scripting, unless you are writing a library or would
+#    better control over error handling, it's highly recommended that you
 #    set -eEu for your script and then trap ERR to this function.
 #
 print_stack_trace() {
@@ -24,10 +25,6 @@ print_stack_trace() {
     echo "Failed command is: $err_cmd"
 } >&2
 
-
-# Helper functions
-q() { if [[ $@ ]]; then printf "%q" "$@"; fi; }
-qn() { if [[ $@ ]]; then printf "%q\n" "$@"; fi; }
 
 _find_sh_module() {
     local path mpath=$1

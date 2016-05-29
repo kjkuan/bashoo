@@ -225,6 +225,23 @@ test_obj_eval() {
     [[ $color = green ]]
 }
 
+test_obj_do() {
+    obj_new Shape x=1 y=2 color=green
+    local shape; ds_pop_to shape
+
+    obj_do() {
+        ds_push "${self[x]}" "${self[y]}"
+        obj_do() {
+            ds_push "${self[color]}"
+        }; with_obj $shape
+    }; with_obj $shape
+
+    local x y color
+    ds_pop_to x y color
+    [[ $x = 1 ]]
+    [[ $y = 2 ]]
+    [[ $color = green ]]
+}
 
 
 if [[ $BASH_SOURCE = "$0" ]]; then
