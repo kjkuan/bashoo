@@ -51,19 +51,6 @@ trap() {
     done
 }
 
-unpack() {
-    while (($# > 1)); do
-        [[ " ${!#} " == *" ${1%%=*} "* ]] || {
-            ds_push_err "Unknown argument: $1"; return 1
-        }
-        [[ ${1%%=*} =~ ^[a-zA-Z_][0-9a-zA-Z_]*$ ]] || {
-            ds_push_err "Invalid name for named argument: $1"; return 1
-        }
-        printf -v "${1%%=*}" -- "%s" "${1#*=}"
-        shift
-    done
-}
-
 
 #= Usage: unpack <arg1 arg2 ...> "param1 param2 ..."
 #= Description:

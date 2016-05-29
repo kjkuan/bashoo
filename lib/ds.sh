@@ -33,26 +33,26 @@ ds_pop() { unset 'DS[-1]'; }
 ds_pop_n() {
     local len=${1:-1}
     while (( len-- )); do
-        unset DS\[$(( ${#DS[@]} - 1 ))\]
+        unset "DS[$(( ${#DS[@]} - 1 ))]" || return $?
     done
 }
 
 ds_dup() { ds_push "${DS[-1]}"; }
 ds_dup_n() {
     local n=${1:-1} top=${DS[-1]}
-    while (( n-- )); do ds_push "$top"; done
+    while (( n-- )); do ds_push "$top" || return $?; done
 }
 ds_swap() { local tmp; (( tmp=DS[-2], DS[-2]=DS[-1], DS[-1]=tmp )) || true; }
 
 #= Usage: ds_echo
 #= Description: Echo the top item on the stack.
 #
-ds_echo() { echo "${DS[-1]}"; }
+ds_echo() { printf "%s\n" "${DS[-1]}"; }
 
 #= Usage: ds_echo_pop
 #= Description: Pop and echo the top item on the stack.
 #
-ds_echo_pop() { ds_echo; ds_pop; }
+ds_echo_pop() { ds_echo && ds_pop; }
 
 #= Usage: ds_pop_to [var_1 var_2 ... var_N]
 #= Description:
@@ -63,7 +63,7 @@ ds_echo_pop() { ds_echo; ds_pop; }
 ds_pop_to() {
     ds_push $(( $# + 1 ))
     while (( $# > 0 )); do
-        eval "$1=\${DS[${#DS[@]} - $# - 1]}"
+        eval "$1=\${DS[${#DS[@]} - $# - 1]}" || return $?
         shift
     done
     ds_pop_n ${DS[-1]}
