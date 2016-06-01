@@ -7,7 +7,7 @@ load ds.sh
 load test.sh
 
 
-test_1(){
+test_1() {
     declare -p DS
     [[ "${DS[*]:-}" = "" && ${#DS[*]} = 0 ]]
 }
@@ -43,6 +43,16 @@ test_2() {
     [[ $f = 12 ]]
 }
 
+test_3() {
+    DS=(); ds_push a; ds_dup
+    [[ ${#DS[*]} = 2 ]]
+    [[ "a a" == "${DS[*]}" ]]
+    ds_dup_n 2
+    [[ ${#DS[*]} = 4 ]]
+    [[ "a a a a" = "${DS[*]}" ]]
+    ds_push b; ds_swap
+    [[ "a a a b a" = "${DS[*]}" ]]
+}
 
 
 
